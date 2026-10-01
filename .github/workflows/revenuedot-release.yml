@@ -1,0 +1,154 @@
+# RevenueDot release: publishes app.revenuedot.purchases:purchases-kmp-* to Maven Central (Central Portal).
+# Not part of upstream RevenueCat; kept on revenuedot/main-patches and every revenuedot/release-* branch.
+#
+# Trigger: push a tag <upstream version>-revenuedot cut from revenuedot/release-<version>,
+# e.g. `git tag 3.11.0-revenuedot origin/revenuedot/release-3.11.0 && git push origin 3.11.0-revenuedot`.
+# The published version is the upstream version, read from gradle/libs.versions.toml (revenuecat-kmp).
+# Runs on macOS: the Apple targets compile purchases-ios (the upstream/purchases-ios submodule, our fork)
+# with Xcode's Swift toolchain. The Android dependency app.revenuedot.purchases:purchases:<revenuecat-android>
+# must already be on Maven Central (publish purchases-android first).
+# workflow_dispatch runs the same build and tests and a local publish; it uploads only when run on a
+# tag with `publish` checked.
+name: RevenueDot release (Maven Central)
+
+on:
+  push:
+    tags:
+      - '*-revenuedot'
+      - '*-revenuedot.*'
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Upload to Maven Central (only when run on a *-revenuedot tag)
+        type: boolean
+        default: false
+
+concurrency:
+  group: revenuedot-release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  GRADLE_OPTS: -Dorg.gradle.daemon=false
+  EXPECTED_GROUP: app.revenuedot.purchases
+
+jobs:
+  build:
+    name: Check version, build, test
+    runs-on: macos-15
+    timeout-minutes: 120
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      publish: ${{ steps.version.outputs.publish }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: true
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v5
+      - name: Select Xcode 16.4
+        run: if [ -d /Applications/Xcode_16.4.app ]; then sudo xcode-select -s /Applications/Xcode_16.4.app; fi; xcodebuild -version
+
+      - name: Check the tag matches the Gradle version
+        id: version
+        run: |
+          set -euo pipefail
+          fail() { echo "::error::$1"; exit 1; }
+          toml() { sed -nE "s/^$1 = \"([^\"]+)\".*/\1/p" gradle/libs.versions.toml | head -1; }
+          GRADLE_VERSION="$(toml revenuecat-kmp)"
+          ANDROID_VERSION="$(toml revenuecat-android)"
+          grep -q "group = \"$EXPECTED_GROUP\"" build.gradle.kts || fail "build.gradle.kts does not set group = \"$EXPECTED_GROUP\". Re-run scripts/forks/apply.ts on this branch."
+          echo "revenuecat-kmp=$GRADLE_VERSION revenuecat-android=$ANDROID_VERSION"
+          PUBLISH=false
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            TAG="$GITHUB_REF_NAME"
+            TAG_VERSION="$(echo "$TAG" | sed -E 's/-revenuedot(\.[0-9]+)?$//')"
+            [ "$TAG_VERSION" != "$TAG" ] || fail "Tag '$TAG' does not end in -revenuedot."
+            [ "$TAG_VERSION" = "$GRADLE_VERSION" ] || fail "Tag '$TAG' says version $TAG_VERSION but gradle/libs.versions.toml revenuecat-kmp is $GRADLE_VERSION. Cut the tag from revenuedot/release-$TAG_VERSION."
+            if [ "$GITHUB_EVENT_NAME" = "push" ] || [ "${{ inputs.publish }}" = "true" ]; then PUBLISH=true; fi
+          elif [ "${{ inputs.publish }}" = "true" ]; then
+            fail "Publishing needs a *-revenuedot tag; this run is on branch $GITHUB_REF_NAME."
+          fi
+          case "$GRADLE_VERSION" in *SNAPSHOT*) [ "$PUBLISH" = "false" ] || fail "Refusing to publish SNAPSHOT version $GRADLE_VERSION.";; esac
+          POM="https://repo1.maven.org/maven2/app/revenuedot/purchases/purchases/$ANDROID_VERSION/purchases-$ANDROID_VERSION.pom"
+          curl -sfI "$POM" >/dev/null || fail "app.revenuedot.purchases:purchases:$ANDROID_VERSION is not on Maven Central yet ($POM). Publish purchases-android $ANDROID_VERSION first (tag $ANDROID_VERSION-revenuedot on revenuedot/purchases-android)."
+          echo "version=$GRADLE_VERSION" >> "$GITHUB_OUTPUT"
+          echo "publish=$PUBLISH" >> "$GITHUB_OUTPUT"
+
+      # Unit tests: :models and :revenuecatui common tests on the JVM, :core and :mappings Apple tests on
+      # the iOS simulator. The full upstream matrix (apiCheck, detekt, sample and tester apps) runs in
+      # RevenueCat's CI.
+      - name: Unit tests
+        run: ./gradlew :models:testDebugUnitTest :revenuecatui:testDebugUnitTest :core:iosSimulatorArm64Test :mappings:iosSimulatorArm64Test --stacktrace
+
+      - name: Build and publish to the local Maven repository
+        run: ./gradlew publishToMavenLocal --no-configuration-cache
+
+      - name: Check the local artifacts
+        run: |
+          set -euo pipefail
+          V="${{ steps.version.outputs.version }}"
+          ROOT=~/.m2/repository/app/revenuedot/purchases
+          n=0
+          for dir in "$ROOT"/purchases-kmp-*/"$V"; do
+            [ -d "$dir" ] || continue
+            a="$(basename "$(dirname "$dir")")"
+            pom="$dir/$a-$V.pom"
+            grep -q "<groupId>$EXPECTED_GROUP</groupId>" "$pom" || { echo "::error::$pom has the wrong groupId"; exit 1; }
+            grep -q "github.com/revenuedot/purchases-kmp" "$pom" || { echo "::error::$pom has no RevenueDot scm/url"; exit 1; }
+            ls "$dir"/*-sources.jar >/dev/null 2>&1 || { echo "::error::$a has no sources jar"; exit 1; }
+            ls "$dir"/*-javadoc.jar >/dev/null 2>&1 || { echo "::error::$a has no javadoc jar"; exit 1; }
+            echo "$a:$V ok"; n=$((n+1))
+          done
+          [ "$n" -gt 0 ] || { echo "::error::Nothing was published under $EXPECTED_GROUP:purchases-kmp-*:$V"; exit 1; }
+          if find ~/.m2/repository -path '*/com/revenuecat/*' -name "*-$V.pom" | grep -q .; then
+            echo "::error::Artifacts outside $EXPECTED_GROUP were produced:"; find ~/.m2/repository -path '*/com/revenuecat/*' -name "*-$V.pom"; exit 1
+          fi
+
+  publish:
+    name: Publish to Maven Central
+    needs: build
+    if: needs.build.outputs.publish == 'true'
+    runs-on: macos-15
+    timeout-minutes: 120
+    environment: production
+    env:
+      ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+      ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+      ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
+      ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
+      SONATYPE_CONNECT_TIMEOUT_SECONDS: '300'
+      SONATYPE_CLOSE_TIMEOUT_SECONDS: '1800'
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: true
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v5
+        with:
+          cache-read-only: true
+      - name: Select Xcode 16.4
+        run: if [ -d /Applications/Xcode_16.4.app ]; then sudo xcode-select -s /Applications/Xcode_16.4.app; fi; xcodebuild -version
+
+      - name: Check the publishing secrets are set
+        run: |
+          missing=""
+          [ -n "$ORG_GRADLE_PROJECT_mavenCentralUsername" ] || missing="$missing MAVEN_CENTRAL_USERNAME"
+          [ -n "$ORG_GRADLE_PROJECT_mavenCentralPassword" ] || missing="$missing MAVEN_CENTRAL_PASSWORD"
+          [ -n "$ORG_GRADLE_PROJECT_signingInMemoryKey" ] || missing="$missing MAVEN_GPG_PRIVATE_KEY"
+          [ -n "$ORG_GRADLE_PROJECT_signingInMemoryKeyPassword" ] || missing="$missing MAVEN_GPG_PASSPHRASE"
+          [ -z "$missing" ] || { echo "::error::Missing secrets in the production environment:$missing"; exit 1; }
+
+      # build.gradle.kts calls publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL, automaticRelease = true)
+      # and signAllPublications(), so the upload is signed and released once the Central Portal
+      # validates it (a failed validation releases nothing). Same task as upstream's fastlane `publish`.
+      - name: Publish ${{ needs.build.outputs.version }}
+        run: ./gradlew publishAllPublicationsToMavenCentralRepository --no-configuration-cache
