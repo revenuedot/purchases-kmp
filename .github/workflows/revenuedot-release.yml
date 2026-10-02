@@ -86,6 +86,20 @@ jobs:
       - name: Unit tests
         run: ./gradlew :models:testDebugUnitTest :revenuecatui:testDebugUnitTest :core:iosSimulatorArm64Test :mappings:iosSimulatorArm64Test --stacktrace
 
+      # build.gradle.kts calls signAllPublications(), so a release version needs a signatory even for the local publish.
+      # This job has no access to the real key; it signs with a key made here and thrown away with the runner.
+      - name: Throwaway signing key for the local publish
+        run: |
+          set -euo pipefail
+          export GNUPGHOME="$RUNNER_TEMP/gnupg"; mkdir -m 700 -p "$GNUPGHOME"
+          gpg --batch --pinentry-mode loopback --passphrase ci --quick-gen-key "RevenueDot CI throwaway key <ci@revenuedot.app>" rsa3072 sign 1d
+          {
+            echo "ORG_GRADLE_PROJECT_signingInMemoryKey<<KEY_EOF"
+            gpg --batch --pinentry-mode loopback --passphrase ci --armor --export-secret-keys
+            echo "KEY_EOF"
+            echo "ORG_GRADLE_PROJECT_signingInMemoryKeyPassword=ci"
+          } >> "$GITHUB_ENV"
+
       - name: Build and publish to the local Maven repository
         run: ./gradlew publishToMavenLocal --no-configuration-cache
 
