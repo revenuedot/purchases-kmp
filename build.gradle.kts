@@ -22,7 +22,7 @@ plugins {
 }
 
 allprojects {
-    group = "com.revenuecat.purchases"
+    group = "app.revenuedot.purchases"
     version = rootProject.libs.versions.revenuecat.kmp.get()
 
     plugins.withType<MavenPublishPlugin> {
@@ -45,9 +45,9 @@ allprojects {
             )
             pom {
                 name.set("purchases-kmp-(${project.name})")
-                description.set("Mobile subscriptions in hours, not months.")
+                description.set("Fork of RevenueCat's MIT SDK, maintained by RevenueDot, not affiliated with RevenueCat.")
                 inceptionYear.set("2024")
-                url.set("https://github.com/RevenueCat/purchases-kmp")
+                url.set("https://github.com/revenuedot/purchases-kmp")
                 licenses {
                     license {
                         name.set("The MIT License (MIT)")
@@ -57,15 +57,15 @@ allprojects {
                 }
                 developers {
                     developer {
-                        id.set("revenuecat")
-                        name.set("RevenueCat, Inc.")
-                        url.set("https://www.revenuecat.com/")
+                        id.set("revenuedot")
+                        name.set("RevenueDot (fork of RevenueCat's MIT SDK)")
+                        url.set("https://revenuedot.app")
                     }
                 }
                 scm {
-                    url.set("https://github.com/RevenueCat/purchases-kmp")
-                    connection.set("scm:git:git://github.com/RevenueCat/purchases-kmp.git")
-                    developerConnection.set("scm:git:ssh://git@github.com/RevenueCat/purchases-kmp.git")
+                    url.set("https://github.com/revenuedot/purchases-kmp")
+                    connection.set("scm:git:git://github.com/revenuedot/purchases-kmp.git")
+                    developerConnection.set("scm:git:ssh://git@github.com/revenuedot/purchases-kmp.git")
                 }
             }
         }

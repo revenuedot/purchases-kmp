@@ -1,0 +1,15 @@
+{
+  "note": "Fork of RevenueCat's MIT SDK, maintained by RevenueDot, not affiliated with RevenueCat.",
+  "pipeline": "https://github.com/revenuedot/revenuedot/tree/main/scripts/forks",
+  "rules": "scripts/forks/rules/purchases-kmp.json",
+  "rulesSha256": "fb008d063edbd78a00c858521c8b507a8b43902bae476cb255b538011bcaa3f2",
+  "upstream": {
+    "repo": "https://github.com/RevenueCat/purchases-kmp",
+    "mergeBase": "a0ea48a205a215051ad0fcf45480b55c77d2269b"
+  },
+  "apiHost": "https://api.revenuedot.app",
+  "signingPublicKey": "gXdn2hmqR/TbdtQwK02laE0YgFz0Rtf918LICLrgZhg=",
+  "publishes": [
+    "Maven Central app.revenuedot.purchases:purchases-kmp-core, -ui, -models, -mappings, -either, -result (same artifact ids, Kotlin packages stay com.revenuecat.purchases.kmp.*)"
+  ]
+}
