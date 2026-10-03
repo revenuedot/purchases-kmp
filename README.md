@@ -41,6 +41,14 @@ The fork already trusts RevenueDot's signing key, so no signature or verificatio
 - **Paywalls, experiments and the Customer Center** built in the RevenueDot dashboard and rendered by this SDK ([guides](https://revenuedot.app/docs/guides)).
 - **A one-line migration:** point the stock SDK at RevenueDot with `setProxyURL`, or install this fork and drop the line ([migration guide](https://revenuedot.app/docs/migrate)).
 
+## Use with your coding agent
+
+Coding agents can read this repository's docs and code on demand, so they use the right package and imports:
+
+- **Context7:** https://context7.com/revenuedot/purchases-kmp
+- **DeepWiki:** https://deepwiki.com/revenuedot/purchases-kmp
+- **GitMCP:** https://gitmcp.io/revenuedot/purchases-kmp
+
 ## Links
 
 - **Docs for this SDK:** https://revenuedot.app/docs/sdks/kotlin-multiplatform

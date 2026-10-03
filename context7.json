@@ -1,0 +1,34 @@
+{
+  "$schema": "https://context7.com/schema/context7.json",
+  "projectTitle": "RevenueDot Kotlin Multiplatform SDK",
+  "description": "RevenueDot's MIT fork of RevenueCat's Kotlin Multiplatform SDK, pointed at RevenueDot, the open-source RevenueCat alternative for in-app purchases and subscriptions.",
+  "folders": [],
+  "excludeFolders": [
+    ".circleci",
+    ".github",
+    "fastlane",
+    ".revenuedot",
+    "scripts",
+    "apiTester",
+    "build-logic",
+    "composeApp",
+    "config",
+    "e2e-tests",
+    "iosApp",
+    "upstream",
+    "watchosTester",
+    ".idea",
+    ".run"
+  ],
+  "excludeFiles": [
+    "CHANGELOG.md",
+    "CHANGELOG.latest.md",
+    "CHANGELOG-LATEST.md"
+  ],
+  "rules": [
+    "Add `implementation(\"app.revenuedot.purchases:purchases-kmp-core:<version>\")` in commonMain, plus `app.revenuedot.purchases:purchases-kmp-ui` for paywalls. The artifact ids are the same as RevenueCat's.",
+    "Kotlin packages stay `com.revenuecat.purchases.kmp.*`, so imports such as `import com.revenuecat.purchases.kmp.Purchases` do not change.",
+    "RevenueDot Cloud (https://api.revenuedot.app) is the default API host. For a self-hosted server, set `Purchases.proxyURL = \"https://revenuedot.example.com\"` before `Purchases.configure`.",
+    "Pass the app's public key from the RevenueDot dashboard to `PurchasesConfiguration`: appl_ on iOS and goog_ on Android."
+  ]
+}

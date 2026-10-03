@@ -2,7 +2,7 @@
   "note": "Fork of RevenueCat's MIT SDK, maintained by RevenueDot, not affiliated with RevenueCat.",
   "pipeline": "https://github.com/revenuedot/revenuedot/tree/main/scripts/forks",
   "rules": "scripts/forks/rules/purchases-kmp.json",
-  "rulesSha256": "e61b708bf62f20d13e6d869a3e8cf36737e6467986e76205854a29a5eea618f2",
+  "rulesSha256": "e55b087ac87fb400c21d5f1e7fd3cae4c08727b3285e2d29c3bba9a08aad339c",
   "upstream": {
     "repo": "https://github.com/RevenueCat/purchases-kmp",
     "mergeBase": "97bbaad65bb39c287c0a4af4fa483aa8dd223059"
