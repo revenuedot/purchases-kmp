@@ -1,11 +1,59 @@
-<!-- revenuedot:banner:start -->
-> [!NOTE]
-> **Fork of RevenueCat's MIT SDK, maintained by RevenueDot, not affiliated with RevenueCat.** It keeps the upstream public API (`Purchases.configure`, `Purchases.shared`, every class and method name), so app code and RevenueCat's guides work unchanged. It talks to [RevenueDot](https://github.com/revenuedot/revenuedot) at `https://api.revenuedot.app` by default (`setProxyURL` still points it at a self-hosted server) and verifies RevenueDot's response signatures. RevenueCat's copyright notice is kept in `LICENSE`. Patches: [scripts/forks](https://github.com/revenuedot/revenuedot/tree/main/scripts/forks). **Status: publishing to package registries is in progress.**
->
-> **Install:** `implementation("app.revenuedot.purchases:purchases-kmp-core:<version>")`. Kotlin packages stay `com.revenuecat.purchases.kmp.*`, so imports stay as they are.
->
-> The upstream README follows, unchanged. Where it says RevenueCat's dashboard or API, use RevenueDot's.
-<!-- revenuedot:banner:end -->
+<!-- revenuedot:readme:start -->
+<p align="center"><a href="https://revenuedot.app"><picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/revenuedot/revenuedot/main/brand/kit/wordmark/revenuedot-lockup-white.svg">
+  <img alt="RevenueDot" src="https://raw.githubusercontent.com/revenuedot/revenuedot/main/brand/kit/wordmark/revenuedot-lockup-black.svg" height="40">
+</picture></a></p>
+
+# RevenueDot Kotlin Multiplatform SDK
+
+This is RevenueDot's MIT fork of RevenueCat's `purchases-kmp`: the same classes and method names, pointed at a RevenueDot server ([RevenueDot Cloud](https://app.revenuedot.app/signup) at `https://api.revenuedot.app`, or one you host) with RevenueDot's response-signing key built in, and kept in sync with upstream.
+
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE) [![Maven Central](https://img.shields.io/maven-central/v/app.revenuedot.purchases/purchases-kmp-core?label=Maven%20Central)](https://central.sonatype.com/artifact/app.revenuedot.purchases/purchases-kmp-core) [![Upstream](https://img.shields.io/badge/upstream-RevenueCat%2Fpurchases--kmp_3.11.0--SNAPSHOT-lightgrey)](https://github.com/RevenueCat/purchases-kmp)
+
+## Install
+
+```kotlin
+// build.gradle.kts, commonMain
+implementation("app.revenuedot.purchases:purchases-kmp-core:3.10.1")
+implementation("app.revenuedot.purchases:purchases-kmp-ui:3.10.1")   // only if you use paywalls
+```
+Kotlin packages stay `com.revenuecat.purchases.kmp.*`, so imports do not change. The iOS library on Maven Central embeds RevenueDot's host and signing key; no RevenueCat host is left in it.
+
+## Configure
+
+```kotlin
+import com.revenuecat.purchases.kmp.Purchases
+import com.revenuecat.purchases.kmp.PurchasesConfiguration
+
+fun initPurchases(apiKey: String) {   // appl_... on iOS, goog_... on Android, from the RevenueDot dashboard
+    // Self-hosted server only: RevenueDot Cloud (https://api.revenuedot.app) is the default.
+    Purchases.proxyURL = "https://revenuedot.example.com"
+    Purchases.configure(PurchasesConfiguration(apiKey))
+}
+```
+
+The fork already trusts RevenueDot's signing key, so no signature or verification setting is needed. Full guide: https://revenuedot.app/docs/sdks/kotlin-multiplatform.
+
+## What RevenueDot adds
+
+- **Self-host for free, or use RevenueDot Cloud** free up to $10,000 a month of tracked revenue ([pricing](https://revenuedot.app/pricing)).
+- **The same REST API and webhook payloads** as RevenueCat, so your backend and integrations keep working ([API reference](https://revenuedot.app/docs/api)).
+- **Paywalls, experiments and the Customer Center** built in the RevenueDot dashboard and rendered by this SDK ([guides](https://revenuedot.app/docs/guides)).
+- **A one-line migration:** point the stock SDK at RevenueDot with `setProxyURL`, or install this fork and drop the line ([migration guide](https://revenuedot.app/docs/migrate)).
+
+## Links
+
+- **Docs for this SDK:** https://revenuedot.app/docs/sdks/kotlin-multiplatform
+- **Releases and changelog:** https://github.com/revenuedot/purchases-kmp/releases (tags `<upstream version>-revenuedot`; upstream's changes are in `CHANGELOG.md`)
+- **RevenueDot server and dashboard:** https://github.com/revenuedot/revenuedot
+- **Fork pipeline (what we change and how upstream is merged):** https://github.com/revenuedot/revenuedot/tree/main/scripts/forks
+
+RevenueDot is not affiliated with RevenueCat, Inc. RevenueCat's copyright notice stays in `LICENSE`; RevenueDot's changes are MIT too.
+
+---
+
+## Upstream README (RevenueCat's, unchanged)
+<!-- revenuedot:readme:end -->
 
 <h3 align="center">😻 In-App Subscriptions Made Easy 😻</h3>  
   
